@@ -11,6 +11,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# 🟢 Fetch data from Binance Futures
 async def fetch_binance_prices():
     url = "https://fapi.binance.com/fapi/v1/ticker/price"
     async with httpx.AsyncClient() as client:
@@ -19,48 +20,46 @@ async def fetch_binance_prices():
             return []
         return response.json()
 
+# 🟢 Simulate signals with confidence, TP, SL
 async def generate_signals():
-    tickers = await fetch_binance_prices()
-    longs = []
-    shorts = []
-    for item in tickers:
+    data = await fetch_binance_prices()
+    signals = []
+
+    for item in data:
         symbol = item["symbol"]
         if not symbol.endswith("USDT"):
             continue
+
         price = float(item["price"])
         direction = "Long" if hash(symbol) % 2 == 0 else "Short"
-        confidence = round(abs(math.sin(hash(symbol))) % 1 * 100, 1)
+        confidence = round(abs(math.sin(hash(symbol))) * 100 % 100, 1)
+
         tp = price * (1 + 0.04) if direction == "Long" else price * (1 - 0.04)
         sl = price * (1 - 0.02) if direction == "Long" else price * (1 + 0.02)
 
-        signal = {
+        signals.append({
             "symbol": symbol,
             "direction": direction,
             "confidence": confidence,
             "entry": round(price, 3),
             "tp": round(tp, 3),
             "sl": round(sl, 3),
-            "time": datetime.utcnow().strftime("%H:%M:%S")
-        }
+            "time": datetime.now().strftime("%H:%M:%S")  # Use local time
+        })
 
-        if direction == "Long":
-            longs.append(signal)
-        else:
-            shorts.append(signal)
-    return longs, shorts
+    # 🟢 Sort by confidence DESCENDING
+    return sorted(signals, key=lambda x: x["confidence"], reverse=True)
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     try:
-        longs, shorts = await generate_signals()
+        signals = await generate_signals()
+        longs = [s for s in signals if s["direction"] == "Long"]
+        shorts = [s for s in signals if s["direction"] == "Short"]
         return templates.TemplateResponse("index.html", {
             "request": request,
             "longs": longs,
             "shorts": shorts
         })
     except Exception as e:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "longs": [],
-            "shorts": []
-        })
+        return templates.TemplateResponse("index.html", {"request": request, "longs": [], "shorts": []})

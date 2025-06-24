@@ -3,20 +3,91 @@
 <head>
   <title>ScalperX</title>
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #000000;
+      color: #ffffff;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #1e90ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #0f74d1;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+    }
+    .card {
+      padding: 15px;
+      border-radius: 10px;
+      background: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #444;
+    }
+    .long {
+      border-left: 5px solid limegreen;
+    }
+    .short {
+      border-left: 5px solid crimson;
+    }
+  </style>
+  <script>
+    function showTab(type) {
+      document.getElementById('longs').style.display = type === 'long' ? 'grid' : 'none';
+      document.getElementById('shorts').style.display = type === 'short' ? 'grid' : 'none';
+    }
+    window.onload = () => showTab('long');
+  </script>
 </head>
 <body>
-  <h1>🚀 ScalperX – Futures Scalp Signals (5m)</h1>
-  <button onclick="location.reload()">🔄 Refresh</button>
-  <div class="grid">
-    {% for signal in signals %}
-      <div class="card {{ signal.direction|lower }}">
-        <h2>{{ signal.pair }}</h2>
-        <p><strong>Direction:</strong> {{ signal.direction }}</p>
-        <p><strong>Confidence:</strong> {{ signal.confidence }}%</p>
-        <p><strong>Entry:</strong> ${{ signal.entry }}</p>
-        <p><strong>TP:</strong> ${{ signal.tp }}</p>
-        <p><strong>SL:</strong> ${{ signal.sl }}</p>
-        <p><small>{{ signal.timestamp }}</small></p>
+  <h1>🚀 ScalperX – Binance Futures Signals</h1>
+
+  <div class="buttons">
+    <button onclick="location.reload()">🔄 Refresh</button>
+    <button onclick="showTab('long')">📈 Long</button>
+    <button onclick="showTab('short')">📉 Short</button>
+  </div>
+
+  <div id="longs" class="grid">
+    {% for s in longs %}
+      <div class="card long">
+        <h3>{{ s.symbol }}</h3>
+        <p><strong>Confidence:</strong> {{ s.confidence }}%</p>
+        <p><strong>Entry:</strong> ${{ s.entry }}</p>
+        <p><strong>TP:</strong> ${{ s.tp }}</p>
+        <p><strong>SL:</strong> ${{ s.sl }}</p>
+        <p><small>{{ s.time }}</small></p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div id="shorts" class="grid" style="display:none;">
+    {% for s in shorts %}
+      <div class="card short">
+        <h3>{{ s.symbol }}</h3>
+        <p><strong>Confidence:</strong> {{ s.confidence }}%</p>
+        <p><strong>Entry:</strong> ${{ s.entry }}</p>
+        <p><strong>TP:</strong> ${{ s.tp }}</p>
+        <p><strong>SL:</strong> ${{ s.sl }}</p>
+        <p><small>{{ s.time }}</small></p>
       </div>
     {% endfor %}
   </div>
