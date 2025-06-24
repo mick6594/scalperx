@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ScalperX</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>🚀 ScalperX – Futures Scalp Signals (5m)</h1>
+  <button onclick="location.reload()">🔄 Refresh</button>
+  <div class="grid">
+    {% for signal in signals %}
+      <div class="card {{ signal.direction|lower }}">
+        <h2>{{ signal.pair }}</h2>
+        <p><strong>Direction:</strong> {{ signal.direction }}</p>
+        <p><strong>Confidence:</strong> {{ signal.confidence }}%</p>
+        <p><strong>Entry:</strong> ${{ signal.entry }}</p>
+        <p><strong>TP:</strong> ${{ signal.tp }}</p>
+        <p><strong>SL:</strong> ${{ signal.sl }}</p>
+        <p><small>{{ signal.timestamp }}</small></p>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>
