@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 import pytz
+import httpx
 
 app = FastAPI()
 
@@ -19,38 +20,29 @@ async def index(request: Request):
 
 @app.get("/signals")
 async def get_signals():
-    # Dummy signal data for testing UI
-    return [
-        {
-            "coin": "BTCUSDT",
-            "direction": "Long",
-            "confidence": 91,
-            "entry": 67420.25,
-            "tp": 67700.25,
-            "sl": 67200.00
-        },
-        {
-            "coin": "ETHUSDT",
-            "direction": "Short",
-            "confidence": 85,
-            "entry": 3725.00,
-            "tp": 3680.00,
-            "sl": 3740.00
-        },
-        {
-            "coin": "SOLUSDT",
-            "direction": "Long",
-            "confidence": 94,
-            "entry": 146.25,
-            "tp": 150.00,
-            "sl": 144.50
-        },
-        {
-            "coin": "DOGEUSDT",
-            "direction": "Short",
-            "confidence": 87,
-            "entry": 0.122,
-            "tp": 0.119,
-            "sl": 0.124
-        }
-    ]
+    BINANCE_API = "https://fapi.binance.com/fapi/v1/ticker/price"
+
+    async with httpx.AsyncClient() as client:
+        res = await client.get(BINANCE_API)
+        prices = res.json()
+
+    # Filter only USDT pairs (no BUSD, etc.)
+    usdt_pairs = [p for p in prices if p["symbol"].endswith("USDT") and not p["symbol"].endswith("BUSD")]
+
+    signals = []
+    for i, p in enumerate(usdt_pairs[:100]):  # Limit for performance
+        price = float(p["price"])
+        direction = "Long" if i % 2 == 0 else "Short"
+        confidence = round(88 + (i % 10) + (i * 0.05), 2)
+        tp = price * (1.03 if direction == "Long" else 0.97)
+        sl = price * (0.97 if direction == "Long" else 1.03)
+        signals.append({
+            "coin": p["symbol"],
+            "direction": direction,
+            "confidence": confidence,
+            "entry": round(price, 4),
+            "tp": round(tp, 4),
+            "sl": round(sl, 4)
+        })
+
+    return sorted(signals, key=lambda x: x["confidence"], reverse=True)
